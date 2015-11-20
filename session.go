@@ -321,7 +321,7 @@ func (s *session) getExecRet(ctx context.Context, sql string) (string, error) {
 func (s *session) GetGlobalStatusVar(ctx context.Context, name string) (string, error) {
 	sql := fmt.Sprintf(`SELECT VARIABLE_VALUE FROM %s.%s WHERE VARIABLE_NAME="%s";`,
 		mysql.SystemDB, mysql.GlobalStatusTable, name)
-	statusVar, err := s.getExecRet(ctx, sql)
+	val, err := s.getExecRet(ctx, sql)
 	if err != nil {
 		if terror.ExecResultIsEmpty.Equal(err) {
 			return "", terror.ExecResultIsEmpty.Gen("unknown status variable:%s", name)
@@ -329,7 +329,7 @@ func (s *session) GetGlobalStatusVar(ctx context.Context, name string) (string, 
 		return "", errors.Trace(err)
 	}
 
-	return statusVar, nil
+	return val, nil
 }
 
 // SetGlobalStatusVar implements GlobalVarAccessor.SetGlobalStatusVar interface.
@@ -634,15 +634,22 @@ func CreateSession(store kv.Storage) (Session, error) {
 
 	ok := isBoostrapped(store)
 	if !ok {
+		// if no bootstrap and storage is remote, we must use a little lease time to
+		// bootstrap quickly, after bootstrapped, we will reset the lease time.
+		// TODO: Using a bootstap tool for doing this may be better later.
+		if !localstore.IsLocalStore(store) {
+			sessionctx.GetDomain(s).SetLease(100 * time.Millisecond)
+		}
+
 		s.initing = true
 		bootstrap(s)
 		s.initing = false
-		finishBoostrap(store)
-	}
 
-	// if store is not local store, we will reset lease time after bootstrap
-	if !localstore.IsLocalStore(store) {
-		sessionctx.GetDomain(s).SetLease(schemaLease)
+		if !localstore.IsLocalStore(store) {
+			sessionctx.GetDomain(s).SetLease(schemaLease)
+		}
+
+		finishBoostrap(store)
 	}
 
 	// TODO: Add auth here
