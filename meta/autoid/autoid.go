@@ -14,7 +14,10 @@
 package autoid
 
 import (
+	"fmt"
+	"os"
 	"sync"
+	"time"
 
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
@@ -59,6 +62,7 @@ func (alloc *allocator) Alloc(tableID int64) (int64, error) {
 
 			alloc.end = end
 			alloc.base = alloc.end - step
+			fmt.Printf("[%v][Meta][Alloc][pid] %d [txn] %v [allocID] %d [tableID] %d [dbID] %d\n", time.Now(), os.Getpid(), txn, alloc.base, tableID, alloc.dbID)
 			return nil
 		})
 
@@ -69,6 +73,7 @@ func (alloc *allocator) Alloc(tableID int64) (int64, error) {
 
 	alloc.base++
 	log.Infof("Alloc id %d, table ID:%d, from %p, database ID:%d", alloc.base, tableID, alloc, alloc.dbID)
+	fmt.Printf("[%v][Meta][Alloc][pid] %d [allocID] %d [tableID] %d [dbID] %d\n", time.Now(), os.Getpid(), alloc.base, tableID, alloc.dbID)
 	return alloc.base, nil
 }
 

@@ -15,6 +15,9 @@ package ddl
 
 import (
 	"bytes"
+	"fmt"
+	"os"
+	"time"
 
 	"github.com/juju/errors"
 	"github.com/ngaut/log"
@@ -421,6 +424,7 @@ func (d *ddl) backfillTableIndex(t table.Table, indexInfo *model.IndexInfo, hand
 
 	for _, handle := range handles {
 		log.Debug("building index...", handle)
+		fmt.Printf("[%v][BackfillIndex][start][handle] %d [pid] %d \n", time.Now(), handle, os.Getpid())
 
 		err := kv.RunInNewTxn(d.store, true, func(txn kv.Transaction) error {
 			if err := d.isReorgRunnable(txn); err != nil {
@@ -468,6 +472,8 @@ func (d *ddl) backfillTableIndex(t table.Table, indexInfo *model.IndexInfo, hand
 		if err != nil {
 			return errors.Trace(err)
 		}
+
+		fmt.Printf("[%v][BackfillIndex][ok][handle] %d [pid] %d \n", time.Now(), handle, os.Getpid())
 	}
 
 	return nil

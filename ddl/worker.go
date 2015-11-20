@@ -14,6 +14,8 @@
 package ddl
 
 import (
+	"fmt"
+	"os"
 	"time"
 
 	"github.com/juju/errors"
@@ -216,6 +218,8 @@ func (d *ddl) handleJobQueue() error {
 			// if run job meets error, we will save this error in job Error
 			// and retry later if the job is not cancelled.
 			d.runJob(t, job)
+
+			fmt.Printf("[%v][handleJobQueue][pid] %d [job] %v ", time.Now(), os.Getpid(), job)
 
 			if job.IsFinished() {
 				err = d.finishJob(t, job)

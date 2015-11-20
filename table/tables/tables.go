@@ -19,6 +19,7 @@ package tables
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 	"time"
@@ -402,11 +403,16 @@ func (t *Table) AddRecord(ctx context.Context, r []interface{}) (recordID int64,
 			return 0, errors.Trace(err)
 		}
 	}
+
 	txn, err := ctx.GetTxn(false)
 	if err != nil {
 		return 0, errors.Trace(err)
 	}
 	for _, v := range t.indices {
+		if v.Name.L == "c1_index" {
+			fmt.Printf("[%v][AddRecord][index][start][handle] %d [pid] %d [id] %d [name] %s [state] %s\n", time.Now(), recordID, os.Getpid(), id, v.Name, v.State)
+		}
+
 		if v == nil || v.State == model.StateDeleteOnly || v.State == model.StateDeleteReorganization {
 			// if index is in delete only or delete reorganization state, we can't add it.
 			continue
@@ -427,6 +433,10 @@ func (t *Table) AddRecord(ctx context.Context, r []interface{}) (recordID int64,
 				return h, errors.Trace(err)
 			}
 			return 0, errors.Trace(err)
+		}
+
+		if v.Name.L == "c1_index" {
+			fmt.Printf("[%v][AddRecord][index][ok][handle] %d [pid] %d [id] %d [name] %s [state] %s [row] %v \n", time.Now(), recordID, os.Getpid(), id, v.Name, v.State, colVals)
 		}
 	}
 

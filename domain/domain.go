@@ -14,6 +14,8 @@
 package domain
 
 import (
+	"fmt"
+	"os"
 	"sync/atomic"
 	"time"
 
@@ -70,6 +72,10 @@ func (do *Domain) loadInfoSchema(txn kv.Transaction) (err error) {
 
 		di.Tables = make([]*model.TableInfo, 0, len(tables))
 		for _, tbl := range tables {
+			if tbl.Name.L == "test_index" {
+				fmt.Printf("[%v][domain][loadInfoSchema][pid] %d [schemaMetaVersion] %d [table] %v \n", time.Now(), os.Getpid(), schemaMetaVersion, tbl)
+			}
+
 			if tbl.State != model.StatePublic {
 				// schema is not public, can't be used outsiee.
 				continue
